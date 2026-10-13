@@ -1,0 +1,6 @@
+{
+  "name": "SanctuaryMedia - Church Gear & Assets Manager",
+  "description": "Cloud-native church communications and media department inventory management system with QR/barcode scanning, automated equipment request approvals, maintenance reminders, offline audit sync, and utilization reports.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
