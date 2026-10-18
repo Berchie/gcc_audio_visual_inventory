@@ -140,6 +140,7 @@ export function initializeSchema() {
       last_audited_date TEXT,
       last_audited_by TEXT,
       total_checkouts_count INTEGER DEFAULT 0,
+      image_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -158,9 +159,11 @@ export function initializeSchema() {
       status TEXT NOT NULL,
       urgent INTEGER DEFAULT 0,
       created_at TEXT NOT NULL,
+      updated_at TEXT,
       reviewed_by TEXT,
       reviewed_at TEXT,
-      manager_notes TEXT
+      manager_notes TEXT,
+      audit_trail TEXT -- JSON array of RequestAuditChange objects
     );
 
     CREATE TABLE IF NOT EXISTS maintenance_tasks (
@@ -205,6 +208,23 @@ export function initializeSchema() {
       committed_at TEXT NOT NULL
     );
   `);
+
+  // Migrate existing SQLite table if needed
+  try {
+    db.exec('ALTER TABLE requests ADD COLUMN audit_trail TEXT;');
+  } catch {
+    // Column already exists
+  }
+  try {
+    db.exec('ALTER TABLE requests ADD COLUMN updated_at TEXT;');
+  } catch {
+    // Column already exists
+  }
+  try {
+    db.exec('ALTER TABLE equipment ADD COLUMN image_url TEXT;');
+  } catch {
+    // Column already exists
+  }
 }
 
 /**
@@ -479,8 +499,8 @@ export function seedInitialDataIfEmpty() {
           assigned_role, borrower_department, checked_out_at, due_at, checkout_event,
           notes, maintenance_interval_days, last_maintenance_date, next_maintenance_date,
           maintenance_notes, last_audited_date, last_audited_by, total_checkouts_count,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          image_url, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       for (const eq of INITIAL_EQUIPMENT) {
         insertEquipment.run(
@@ -511,11 +531,24 @@ export function seedInitialDataIfEmpty() {
           eq.lastAuditedDate || '',
           eq.lastAuditedBy || '',
           eq.totalCheckoutsCount || 0,
+          eq.imageUrl || null,
           now,
           now
         );
       }
     });
+  } else {
+    // Backfill images for any initial equipment items that lack one
+    try {
+      const updateImg = db.prepare("UPDATE equipment SET image_url = ? WHERE id = ? AND (image_url IS NULL OR image_url = '')");
+      for (const eq of INITIAL_EQUIPMENT) {
+        if (eq.imageUrl) {
+          updateImg.run(eq.imageUrl, eq.id);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not backfill equipment images:', e);
+    }
   }
 
   // 7. Default Requests
@@ -526,8 +559,8 @@ export function seedInitialDataIfEmpty() {
         INSERT INTO requests (
           id, requester_name, requester_email, requester_dept, program_name, location,
           start_date, end_date, requested_asset_ids, purpose, status, urgent,
-          created_at, reviewed_by, reviewed_at, manager_notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          created_at, updated_at, reviewed_by, reviewed_at, manager_notes, audit_trail
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       for (const req of INITIAL_REQUESTS) {
         insertRequest.run(
@@ -544,9 +577,11 @@ export function seedInitialDataIfEmpty() {
           req.status,
           req.urgent ? 1 : 0,
           req.createdAt,
+          req.updatedAt || req.createdAt,
           req.reviewedBy || null,
           req.reviewedAt || null,
-          req.managerNotes || null
+          req.managerNotes || null,
+          JSON.stringify(req.auditTrail || [])
         );
       }
     });

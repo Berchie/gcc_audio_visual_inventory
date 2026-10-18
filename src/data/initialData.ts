@@ -58,6 +58,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedBy: 'Sarah Jenkins',
     totalCheckoutsCount: 42,
     notes: 'Primary pulpit & vocal wireless system with high-gain directional antennas.',
+    imageUrl: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'AUD-MIC-02',
@@ -86,6 +87,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedBy: 'Marcus Cole',
     totalCheckoutsCount: 31,
     notes: 'Used primarily in Youth Chapel. Equipped with rechargeable BA 70 pack.',
+    imageUrl: 'https://images.unsplash.com/photo-1520523839898-507125cd53c1?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'AUD-IEM-01',
@@ -108,6 +110,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedDate: '2026-10-02',
     lastAuditedBy: 'Sarah Jenkins',
     totalCheckoutsCount: 56,
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'AUD-DIX-01',
@@ -129,6 +132,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedDate: '2026-10-03',
     lastAuditedBy: 'Sarah Jenkins',
     totalCheckoutsCount: 19,
+    imageUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'VID-CAM-01',
@@ -151,6 +155,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedDate: '2026-10-05',
     lastAuditedBy: 'Marcus Cole',
     totalCheckoutsCount: 78,
+    imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'VID-CAM-02',
@@ -177,6 +182,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-10-28',
     lastAuditedDate: '2026-10-01',
     totalCheckoutsCount: 64,
+    imageUrl: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'VID-PTZ-01',
@@ -198,6 +204,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     maintenanceNotes: 'Due for periodic NDI firmware verification and pan belt check.',
     lastAuditedDate: '2026-09-20',
     totalCheckoutsCount: 15,
+    imageUrl: 'https://images.unsplash.com/photo-1587840171670-8b850147754e?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'VID-SWT-01',
@@ -218,6 +225,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-11-15',
     lastAuditedDate: '2026-10-01',
     totalCheckoutsCount: 12,
+    imageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'VID-TX-01',
@@ -239,6 +247,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     maintenanceNotes: 'Antenna port 2 threading loose. Replacement SMA connector on order.',
     lastAuditedDate: '2026-09-15',
     totalCheckoutsCount: 39,
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'LGT-FIX-01',
@@ -259,6 +268,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-11-05',
     lastAuditedDate: '2026-10-02',
     totalCheckoutsCount: 22,
+    imageUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'LGT-LED-01',
@@ -280,6 +290,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     lastAuditedDate: '2026-10-04',
     totalCheckoutsCount: 18,
     notes: 'Reserved for Pastoral Christmas Announcement Video Shoot next Tuesday.',
+    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'LGT-DMX-01',
@@ -300,6 +311,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-10-20',
     lastAuditedDate: '2026-10-02',
     totalCheckoutsCount: 14,
+    imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'CMP-MAC-01',
@@ -321,6 +333,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     maintenanceNotes: 'macOS Sequoia updated, ProPresenter 7.16 libraries verified, weekly Time Machine complete.',
     lastAuditedDate: '2026-10-05',
     totalCheckoutsCount: 8,
+    imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'CMP-LAP-01',
@@ -341,6 +354,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-10-10',
     lastAuditedDate: '2026-10-01',
     totalCheckoutsCount: 25,
+    imageUrl: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'CAB-SNK-01',
@@ -361,6 +375,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-11-10',
     lastAuditedDate: '2026-09-15',
     totalCheckoutsCount: 14,
+    imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'STG-TRP-01',
@@ -381,6 +396,7 @@ export const INITIAL_EQUIPMENT: EquipmentItem[] = [
     nextMaintenanceDate: '2026-11-12',
     lastAuditedDate: '2026-10-01',
     totalCheckoutsCount: 45,
+    imageUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
   },
 ];
 
@@ -399,6 +415,17 @@ export const INITIAL_REQUESTS: EquipmentRequest[] = [
     status: 'pending',
     createdAt: '2026-10-10T09:15:00Z',
     urgent: true,
+    auditTrail: [
+      {
+        id: 'CHG-104-01',
+        timestamp: '2026-10-10T09:15:00Z',
+        editorId: 'usr-req-1',
+        editorName: 'Grace Lin',
+        editorRole: 'requester',
+        action: 'created',
+        summary: 'Requisition submitted for 3 equipment items (Youth Ministry)',
+      },
+    ],
   },
   {
     id: 'REQ-2026-102',
@@ -417,6 +444,26 @@ export const INITIAL_REQUESTS: EquipmentRequest[] = [
     reviewedAt: '2026-10-08T16:00:00Z',
     managerNotes: 'Approved. Sarah will prep mobile vMix profile on Dell laptop prior to Saturday.',
     urgent: false,
+    auditTrail: [
+      {
+        id: 'CHG-102-02',
+        timestamp: '2026-10-08T16:00:00Z',
+        editorId: 'usr-admin-1',
+        editorName: 'Pastor David Vance',
+        editorRole: 'administrator',
+        action: 'status_change',
+        summary: 'Officially approved by Director Pastor David Vance: vMix profile setup scheduled',
+      },
+      {
+        id: 'CHG-102-01',
+        timestamp: '2026-10-08T14:30:00Z',
+        editorId: 'usr-outreach-1',
+        editorName: 'Pastor Tim Hayes',
+        editorRole: 'requester',
+        action: 'created',
+        summary: 'Requisition submitted for Thanksgiving livestream coverage',
+      },
+    ],
   },
   {
     id: 'REQ-2026-101',
@@ -435,6 +482,26 @@ export const INITIAL_REQUESTS: EquipmentRequest[] = [
     reviewedAt: '2026-10-07T13:45:00Z',
     managerNotes: 'Main sanctuary Shure ULXD rack is hard-wired to Dante network and cannot leave sanctuary. Assigned 2 portable Sennheiser stage mics instead.',
     urgent: false,
+    auditTrail: [
+      {
+        id: 'CHG-101-02',
+        timestamp: '2026-10-07T13:45:00Z',
+        editorId: 'usr-admin-1',
+        editorName: 'Pastor David Vance',
+        editorRole: 'administrator',
+        action: 'status_change',
+        summary: 'Declined by Pastor David Vance: Dante network conflict, assigned portable stage mics instead',
+      },
+      {
+        id: 'CHG-101-01',
+        timestamp: '2026-10-07T11:20:00Z',
+        editorId: 'usr-kids-1',
+        editorName: 'Rachel Adams',
+        editorRole: 'requester',
+        action: 'created',
+        summary: 'Requisition submitted for Kingdom Kids Festival',
+      },
+    ],
   },
 ];
 

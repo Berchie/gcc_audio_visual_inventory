@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { Navbar } from './components/Navbar';
-import { NavigationTabs } from './components/NavigationTabs';
+import { AppSidebar } from './components/Navigation/AppSidebar';
+import { TopHeader } from './components/Navigation/TopHeader';
 import type { ActiveTab } from './types';
 import { DashboardView } from './components/Dashboard/DashboardView';
 import { EquipmentCatalog } from './components/Catalog/EquipmentCatalog';
@@ -21,10 +21,12 @@ import { EquipmentDetailModal } from './components/Catalog/EquipmentDetailModal'
 import { CheckOutModal } from './components/Catalog/CheckOutModal';
 import { CheckInModal } from './components/Catalog/CheckInModal';
 import { EquipmentItem } from './types';
-import { Radio, WifiOff, Globe } from 'lucide-react';
+import { WifiOff, Globe } from 'lucide-react';
 
 function SanctuaryMediaApp() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Modals state
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -51,37 +53,54 @@ function SanctuaryMediaApp() {
   }, [currentUser, canAccessTab, activeTab]);
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
-      {/* Header */}
-      <Navbar
-        onOpenScanner={() => setIsScannerOpen(true)}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
-        onOpenHostingGuide={() => setIsHostingGuideOpen(true)}
-        onOpenUserModal={() => setIsUserModalOpen(true)}
-      />
-
-      {/* Navigation Sub-bar */}
-      <NavigationTabs
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+      {/* Desktop & Mobile Sidebar Navigation */}
+      <AppSidebar
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
         onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenNewRequest={() => setIsNewRequestOpen(true)}
+        onOpenUserModal={() => setIsUserModalOpen(true)}
+        onOpenHostingGuide={() => setIsHostingGuideOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobileOpen={isMobileNavOpen}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
+      />
+
+      {/* Top Bar Contract Header */}
+      <TopHeader
+        activeTab={activeTab}
+        isCollapsed={isSidebarCollapsed}
+        onOpenMobileMenu={() => setIsMobileNavOpen(true)}
+        onOpenScanner={() => setIsScannerOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        onOpenNewRequest={() => setIsNewRequestOpen(true)}
         onOpenUserModal={() => setIsUserModalOpen(true)}
       />
 
       {/* Persistent Offline Status Banner */}
       {!isOnline && (
-        <div className="bg-amber-500 dark:bg-amber-600/90 text-slate-950 px-4 py-1.5 text-xs font-bold flex items-center justify-between shadow-xs">
+        <div
+          className={`bg-amber-500 dark:bg-amber-600 text-slate-950 px-4 py-1.5 text-xs font-semibold flex items-center justify-between transition-all duration-200 ${
+            isSidebarCollapsed ? 'md:pl-16' : 'md:pl-60'
+          }`}
+        >
           <div className="flex items-center gap-2 mx-auto">
-            <WifiOff className="h-4 w-4" />
+            <WifiOff className="h-3.5 w-3.5" />
             <span>
-              Operating in Remote Offline Mode — Audits stored locally ({pendingOfflineAudits.length} pending sync)
+              Remote Offline Mode — Audits stored locally ({pendingOfflineAudits.length} pending sync)
             </span>
           </div>
         </div>
       )}
 
       {/* Main Container */}
-      <main className="mx-auto max-w-7xl w-full flex-1 px-3 py-5 sm:px-6">
+      <main
+        className={`w-full flex-1 px-4 py-5 sm:px-6 lg:px-8 max-w-7xl mx-auto transition-all duration-200 ${
+          isSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+        }`}
+      >
         {!isTabPermitted ? (
           <AccessRestrictedView
             tab={activeTab}
@@ -118,19 +137,22 @@ function SanctuaryMediaApp() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/80 py-4 text-center text-xs text-slate-500 hidden md:block">
+      {/* Subtle Minimal Footer */}
+      <footer
+        className={`border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 py-3 text-center text-xs text-slate-500 transition-all duration-200 ${
+          isSidebarCollapsed ? 'md:pl-16' : 'md:pl-60'
+        }`}
+      >
         <div className="mx-auto max-w-7xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Radio className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
-            <span>GCCMedia Platform • Grace Community Church Communications & Media Department</span>
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+            <span>Grace Community Church • Media & Communications</span>
           </div>
           <button
             onClick={() => setIsHostingGuideOpen(true)}
-            className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+            className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
           >
-            <Globe className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-            <span>Subdomain Hosting: media.church.org</span>
+            <Globe className="h-3 w-3 text-indigo-500" />
+            <span>media.church.org</span>
           </button>
         </div>
       </footer>

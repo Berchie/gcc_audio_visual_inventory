@@ -41,7 +41,22 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     hasPermission,
   } = useApp();
 
-  const pendingRequestsCount = requests.filter((r) => r.status === 'pending').length;
+  const isRequesterUser = currentUser.role === 'requester' || !hasPermission('can_approve_requests');
+  const userScopedRequests = isRequesterUser
+    ? requests.filter((r) => {
+        const userEmail = currentUser.email?.toLowerCase().trim();
+        const userName = currentUser.name?.toLowerCase().trim();
+        const userDept = currentUser.department?.toLowerCase().trim();
+        return (
+          (userEmail && r.requesterEmail?.toLowerCase().trim() === userEmail) ||
+          (userName && r.requesterName?.toLowerCase().trim() === userName) ||
+          ((r as any).requesterId && (r as any).requesterId === currentUser.id) ||
+          (userDept && r.requesterDept?.toLowerCase().trim() === userDept)
+        );
+      })
+    : requests;
+
+  const pendingRequestsCount = userScopedRequests.filter((r) => r.status === 'pending').length;
   const overdueMaintenanceCount = maintenanceTasks.filter((m) => m.status === 'overdue').length;
 
   const allTabs: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string }[] = [

@@ -131,6 +131,9 @@ export interface EquipmentItem {
   lastAuditedDate: string;
   lastAuditedBy?: string;
   totalCheckoutsCount: number;
+
+  // Media
+  imageUrl?: string;
 }
 
 export type AuditActionType = 
@@ -141,9 +144,28 @@ export type AuditActionType =
   | 'inventory_audited'
   | 'request_approved'
   | 'request_rejected'
+  | 'request_edited'
   | 'item_created'
   | 'item_updated'
   | 'status_changed';
+
+export interface RequestFieldDiff {
+  field: string;
+  label: string;
+  oldValue: any;
+  newValue: any;
+}
+
+export interface RequestAuditChange {
+  id?: string;
+  timestamp: string;
+  editorId: string;
+  editorName: string;
+  editorRole: string;
+  action: 'created' | 'edited' | 'status_change';
+  summary: string;
+  changes?: RequestFieldDiff[];
+}
 
 export interface AuditTrailLog {
   id: string;
@@ -177,10 +199,14 @@ export interface EquipmentRequest {
   purpose: string;
   status: RequestStatus;
   createdAt: string;
+  updatedAt?: string;
   reviewedBy?: string;
   reviewedAt?: string;
   managerNotes?: string;
   urgent: boolean;
+  auditTrail?: RequestAuditChange[];
+  lastEditedBy?: string;
+  lastEditedAt?: string;
 }
 
 export interface MaintenanceTask {

@@ -14,6 +14,8 @@ import {
   LocationDefinition,
   DepartmentDefinition,
   ActiveTab,
+  RequestAuditChange,
+  RequestFieldDiff,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -94,11 +96,17 @@ interface AppContextType {
   ) => boolean;
   addEquipment: (item: Omit<EquipmentItem, 'totalCheckoutsCount'>) => void;
   updateEquipment: (item: EquipmentItem) => void;
+  updateEquipmentImage: (assetId: string, imageUrl: string) => Promise<boolean>;
   deleteEquipment: (id: string) => boolean;
   
   // Requests & Approval Workflow
   requests: EquipmentRequest[];
   createRequest: (data: Omit<EquipmentRequest, 'id' | 'createdAt' | 'status'>) => void;
+  updateRequest: (
+    requestId: string,
+    updatedData: Partial<EquipmentRequest>,
+    changeReason?: string
+  ) => Promise<boolean>;
   approveRequest: (requestId: string, notes: string) => void;
   rejectRequest: (requestId: string, notes: string) => void;
   
@@ -789,6 +797,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Update equipment image
+  const updateEquipmentImage = async (assetId: string, imageUrl: string): Promise<boolean> => {
+    setEquipment((prev) =>
+      prev.map((eq) => (eq.id === assetId ? { ...eq, imageUrl: imageUrl || undefined } : eq))
+    );
+
+    const item = getEquipmentById(assetId);
+    const log: AuditTrailLog = {
+      id: `LOG-${Date.now().toString().slice(-5)}`,
+      assetId,
+      assetName: item?.name || 'Asset',
+      action: 'item_updated',
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: currentUser.role,
+      programOrEvent: 'Asset Photo Update',
+      department: 'Media & Technical Arts',
+      timestamp: new Date().toISOString(),
+      details: imageUrl ? `Photo updated for ${assetId} by ${currentUser.name}` : `Photo removed for ${assetId}`,
+    };
+    setAuditLogs((prev) => [log, ...prev]);
+
+    if (isOnline) {
+      try {
+        await fetch(`/api/equipment/${encodeURIComponent(assetId)}/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl, user: currentUser }),
+        });
+        refreshSqliteStatus();
+      } catch (e) {
+        console.warn('SQLite updateEquipmentImage error:', e);
+      }
+    }
+    return true;
+  };
+
   // Delete equipment
   const deleteEquipment = (id: string): boolean => {
     const item = getEquipmentById(id);
@@ -961,6 +1006,193 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'request',
       { requestId: req.id }
     );
+  };
+
+  // Edit request while pending authorization
+  const updateRequest = async (
+    requestId: string,
+    updatedData: Partial<EquipmentRequest>,
+    changeReason?: string
+  ): Promise<boolean> => {
+    const existing = requests.find((r) => r.id === requestId);
+    if (!existing) return false;
+
+    // Check if status is pending
+    if (existing.status !== 'pending') {
+      console.warn('Cannot edit request that is not pending authorization.');
+      return false;
+    }
+
+    // Build diff of changes
+    const changes: RequestFieldDiff[] = [];
+    const changeSummaryParts: string[] = [];
+
+    if (updatedData.programName !== undefined && updatedData.programName !== existing.programName) {
+      changes.push({
+        field: 'programName',
+        label: 'Program / Event Title',
+        oldValue: existing.programName,
+        newValue: updatedData.programName,
+      });
+      changeSummaryParts.push(`Program title changed to "${updatedData.programName}"`);
+    }
+
+    if (updatedData.location !== undefined && updatedData.location !== existing.location) {
+      changes.push({
+        field: 'location',
+        label: 'Setup Location',
+        oldValue: existing.location,
+        newValue: updatedData.location,
+      });
+      changeSummaryParts.push(`Location changed to "${updatedData.location}"`);
+    }
+
+    if (updatedData.startDate !== undefined && updatedData.startDate !== existing.startDate) {
+      changes.push({
+        field: 'startDate',
+        label: 'Start Date & Time',
+        oldValue: existing.startDate,
+        newValue: updatedData.startDate,
+      });
+      changeSummaryParts.push('Start time adjusted');
+    }
+
+    if (updatedData.endDate !== undefined && updatedData.endDate !== existing.endDate) {
+      changes.push({
+        field: 'endDate',
+        label: 'End Date & Time',
+        oldValue: existing.endDate,
+        newValue: updatedData.endDate,
+      });
+      changeSummaryParts.push('End time adjusted');
+    }
+
+    if (updatedData.purpose !== undefined && updatedData.purpose !== existing.purpose) {
+      changes.push({
+        field: 'purpose',
+        label: 'Requisition Purpose',
+        oldValue: existing.purpose,
+        newValue: updatedData.purpose,
+      });
+      changeSummaryParts.push('Purpose description updated');
+    }
+
+    if (updatedData.requesterDept !== undefined && updatedData.requesterDept !== existing.requesterDept) {
+      changes.push({
+        field: 'requesterDept',
+        label: 'Department',
+        oldValue: existing.requesterDept,
+        newValue: updatedData.requesterDept,
+      });
+      changeSummaryParts.push(`Department changed to "${updatedData.requesterDept}"`);
+    }
+
+    if (updatedData.urgent !== undefined && updatedData.urgent !== existing.urgent) {
+      changes.push({
+        field: 'urgent',
+        label: 'Urgent Priority',
+        oldValue: existing.urgent ? 'Yes' : 'No',
+        newValue: updatedData.urgent ? 'Yes' : 'No',
+      });
+      changeSummaryParts.push(updatedData.urgent ? 'Flagged as Urgent Priority' : 'Urgent flag removed');
+    }
+
+    if (updatedData.requestedAssetIds !== undefined) {
+      const oldSet = new Set(existing.requestedAssetIds);
+      const newSet = new Set(updatedData.requestedAssetIds);
+      const added = updatedData.requestedAssetIds.filter((x) => !oldSet.has(x));
+      const removed = existing.requestedAssetIds.filter((x) => !newSet.has(x));
+
+      if (added.length > 0 || removed.length > 0) {
+        changes.push({
+          field: 'requestedAssetIds',
+          label: 'Requested Assets',
+          oldValue: existing.requestedAssetIds,
+          newValue: updatedData.requestedAssetIds,
+        });
+
+        const assetParts: string[] = [];
+        if (added.length > 0) assetParts.push(`+${added.length} added (${added.join(', ')})`);
+        if (removed.length > 0) assetParts.push(`-${removed.length} removed (${removed.join(', ')})`);
+        changeSummaryParts.push(`Assets modified: ${assetParts.join(', ')}`);
+      }
+    }
+
+    const defaultSummary = changeSummaryParts.length > 0
+      ? changeSummaryParts.join('; ')
+      : 'Requisition details updated';
+
+    const fullSummary = changeReason?.trim()
+      ? `${defaultSummary} • Reason: ${changeReason.trim()}`
+      : defaultSummary;
+
+    const now = new Date().toISOString();
+    const auditEntry: RequestAuditChange = {
+      id: `CHG-${Date.now().toString().slice(-4)}`,
+      timestamp: now,
+      editorId: currentUser.id,
+      editorName: currentUser.name,
+      editorRole: currentUser.role,
+      action: 'edited',
+      summary: fullSummary,
+      changes,
+    };
+
+    const updatedRequest: EquipmentRequest = {
+      ...existing,
+      ...updatedData,
+      updatedAt: now,
+      lastEditedBy: currentUser.name,
+      lastEditedAt: now,
+      auditTrail: [auditEntry, ...(existing.auditTrail || [])],
+    };
+
+    // Update in React State
+    setRequests((prev) => prev.map((r) => (r.id === requestId ? updatedRequest : r)));
+
+    // Record in global Audit Trail Logs
+    const log: AuditTrailLog = {
+      id: `LOG-${Date.now().toString().slice(-5)}`,
+      assetId: (updatedData.requestedAssetIds || existing.requestedAssetIds).join(','),
+      assetName: `Requisition: ${updatedRequest.programName}`,
+      action: 'request_edited',
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: currentUser.role,
+      programOrEvent: updatedRequest.programName,
+      department: updatedRequest.requesterDept,
+      timestamp: now,
+      details: `Request ${requestId} modified while pending authorisation by ${currentUser.name} (${currentUser.role}): ${fullSummary}`,
+      offlineGenerated: !isOnline,
+    };
+    setAuditLogs((prev) => [log, ...prev]);
+
+    // Persist to SQLite
+    if (isOnline) {
+      try {
+        await fetch(`/api/requests/${encodeURIComponent(requestId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...updatedData,
+            auditEntry,
+            user: currentUser,
+          }),
+        });
+        refreshSqliteStatus();
+      } catch (e) {
+        console.warn('SQLite updateRequest error:', e);
+      }
+    }
+
+    sendPushNotification(
+      'Requisition Modified',
+      `Pending request for "${updatedRequest.programName}" was edited by ${currentUser.name}.`,
+      'request',
+      { requestId }
+    );
+
+    return true;
   };
 
   // Audit scanning (Supports both Online and Offline walk-arounds)
@@ -1794,9 +2026,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         checkInItem,
         addEquipment,
         updateEquipment,
+        updateEquipmentImage,
         deleteEquipment,
         requests,
         createRequest,
+        updateRequest,
         approveRequest,
         rejectRequest,
         maintenanceTasks,

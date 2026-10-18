@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, Save, Tag, MapPin, PoundSterling, Wrench } from 'lucide-react';
 import { EquipmentItem, EquipmentCategory, EquipmentCondition, EquipmentStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { ItemImageField } from './ItemImageField';
 
 interface AddEditEquipmentModalProps {
   itemToEdit?: EquipmentItem | null;
@@ -34,6 +35,7 @@ export const AddEditEquipmentModal: React.FC<AddEditEquipmentModalProps> = ({
   const [maintenanceIntervalDays, setMaintenanceIntervalDays] = useState(
     itemToEdit?.maintenanceIntervalDays || 60
   );
+  const [imageUrl, setImageUrl] = useState(itemToEdit?.imageUrl || '');
   const [notes, setNotes] = useState(itemToEdit?.notes || '');
   const [error, setError] = useState('');
 
@@ -81,6 +83,7 @@ export const AddEditEquipmentModal: React.FC<AddEditEquipmentModalProps> = ({
         purchaseDate,
         replacementCost: Number(replacementCost) || 0,
         maintenanceIntervalDays: Number(maintenanceIntervalDays) || 60,
+        imageUrl: imageUrl.trim() || undefined,
         notes: notes.trim(),
       });
     } else {
@@ -108,6 +111,7 @@ export const AddEditEquipmentModal: React.FC<AddEditEquipmentModalProps> = ({
         lastMaintenanceDate: todayStr,
         nextMaintenanceDate: nextMaintenanceStr,
         lastAuditedDate: todayStr,
+        imageUrl: imageUrl.trim() || undefined,
         notes: notes.trim(),
       });
     }
@@ -354,6 +358,16 @@ export const AddEditEquipmentModal: React.FC<AddEditEquipmentModalProps> = ({
               />
             </div>
           </div>
+
+          {/* Equipment Photo Picker & Online Search */}
+          <ItemImageField
+            imageUrl={imageUrl}
+            onChange={setImageUrl}
+            itemName={name}
+            category={category}
+            brand={brand}
+            model={model}
+          />
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">

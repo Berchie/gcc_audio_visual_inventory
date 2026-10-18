@@ -16,6 +16,15 @@ import {
   MoreVertical,
   QrCode,
   SlidersHorizontal,
+  Camera,
+  Globe,
+  Mic,
+  Video,
+  Sun,
+  Monitor,
+  Layers,
+  Box,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { EquipmentItem, EquipmentCategory, EquipmentStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
@@ -24,13 +33,14 @@ import { CheckOutModal } from './CheckOutModal';
 import { CheckInModal } from './CheckInModal';
 import { AddEditEquipmentModal } from './AddEditEquipmentModal';
 import { PrintLabelsModal } from './PrintLabelsModal';
+import { ItemImageSearchModal } from './ItemImageSearchModal';
 
 interface EquipmentCatalogProps {
   onOpenScanner: () => void;
 }
 
 export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanner }) => {
-  const { equipment, currentUser, hasPermission } = useApp();
+  const { equipment, currentUser, hasPermission, updateEquipmentImage } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -45,6 +55,7 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<EquipmentItem | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [imageModalItem, setImageModalItem] = useState<EquipmentItem | null>(null);
 
   // Categories list
   const categories: string[] = [
@@ -104,6 +115,25 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
         return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
       default:
         return 'bg-slate-700 text-slate-300 border-slate-600';
+    }
+  };
+
+  const getItemCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Audio':
+        return <Mic className="h-6 w-6" />;
+      case 'Video & Cameras':
+        return <Video className="h-6 w-6" />;
+      case 'Lighting':
+        return <Sun className="h-6 w-6" />;
+      case 'Computing & Media':
+        return <Monitor className="h-6 w-6" />;
+      case 'Cables & Interconnects':
+        return <Layers className="h-6 w-6" />;
+      case 'Staging & Rigging':
+        return <Box className="h-6 w-6" />;
+      default:
+        return <ImageIcon className="h-6 w-6" />;
     }
   };
 
@@ -285,50 +315,109 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
 
       {/* Equipment View Mode: Grid */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredEquipment.map((item) => (
             <div
               key={item.id}
-              className="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-4 transition hover:border-slate-700 hover:bg-slate-850 shadow-md"
+              className="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-4 transition-all duration-200 hover:border-slate-700 hover:bg-slate-850 hover:shadow-xl shadow-md overflow-hidden"
             >
               <div>
-                {/* Top ID & Status Badge */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
+                {/* Equipment Image Media Stage */}
+                <div className="relative mb-3.5 h-44 w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner group/img select-none">
+                  {item.imageUrl ? (
+                    <>
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        onClick={() => setDetailItem(item)}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-black/25 pointer-events-none" />
+                    </>
+                  ) : (
+                    <div
+                      onClick={() => setDetailItem(item)}
+                      className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 p-4 text-center cursor-pointer group-hover:from-slate-850 transition"
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 text-slate-400 border border-slate-700/60 mb-1.5 shadow-inner">
+                        {getItemCategoryIcon(item.category)}
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-medium">No photo assigned</span>
+                      <span className="text-[10px] text-sky-400 mt-0.5 font-semibold">Click to add photo</span>
+                    </div>
+                  )}
+
+                  {/* Top-Left: Asset ID Badge with glassmorphism */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 pointer-events-none">
+                    <span className="font-mono text-xs font-bold text-sky-300 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-sky-500/30 shadow-sm">
                       {item.id}
-                    </span>
-                    <span className="text-[10px] text-slate-500 truncate max-w-[100px]">
-                      {item.brand}
                     </span>
                   </div>
 
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${getStatusBadge(
-                      item.status
-                    )}`}
-                  >
-                    {item.status.replace('_', ' ')}
-                  </span>
+                  {/* Top-Right: Status Badge with glassmorphism */}
+                  <div className="absolute top-2.5 right-2.5">
+                    <span
+                      className={`inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-sm ${getStatusBadge(
+                        item.status
+                      )}`}
+                    >
+                      {item.status.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Bottom-Right: Quick Image Search / Change Button */}
+                  <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setImageModalItem(item);
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-slate-950/85 hover:bg-sky-600 text-slate-200 hover:text-white px-2.5 py-1 text-[11px] font-medium backdrop-blur-md border border-slate-700 hover:border-sky-400 shadow-md transition-all cursor-pointer"
+                      title="Search online archives or upload new photo"
+                    >
+                      <Camera className="h-3.5 w-3.5 text-sky-400 group-hover:text-white" />
+                      <span>{item.imageUrl ? 'Photo' : 'Add Photo'}</span>
+                    </button>
+                  </div>
+
+                  {/* Bottom-Left: Category Tag */}
+                  <div className="absolute bottom-2.5 left-2.5 pointer-events-none">
+                    <span className="text-[10px] text-slate-300 bg-slate-950/80 backdrop-blur-md px-2 py-0.5 rounded-md border border-slate-800 font-medium">
+                      {item.category}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Name */}
+                {/* Brand & Model Meta */}
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <span className="font-medium text-slate-300 truncate">{item.brand} {item.model}</span>
+                  <span className="text-[11px] font-mono text-slate-500">S/N: {item.serialNumber || 'N/A'}</span>
+                </div>
+
+                {/* Item Name */}
                 <h3
                   onClick={() => setDetailItem(item)}
-                  className="mt-2.5 text-sm font-bold text-white group-hover:text-sky-400 transition cursor-pointer line-clamp-2"
+                  className="text-sm font-bold text-white group-hover:text-sky-400 transition cursor-pointer line-clamp-2 leading-snug"
                 >
                   {item.name}
                 </h3>
 
-                {/* Location & Specs */}
+                {/* Location & Condition */}
                 <div className="mt-3 space-y-1.5 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                    <span className="truncate">{item.location}</span>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      <span className="truncate">{item.location}</span>
+                    </div>
+                    <span className="text-[10px] capitalize font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/50 shrink-0">
+                      {item.condition.replace('_', ' ')}
+                    </span>
                   </div>
 
                   {item.status === 'checked_out' && (
-                    <div className="flex items-center gap-1.5 rounded-lg bg-sky-950/40 p-2 text-sky-300 border border-sky-500/20">
+                    <div className="flex items-center gap-1.5 rounded-lg bg-sky-950/40 p-2 text-sky-300 border border-sky-500/20 text-xs">
                       <User className="h-3.5 w-3.5 shrink-0" />
                       <div className="truncate">
                         <span className="font-semibold">{item.assignedTo}</span>
@@ -350,11 +439,21 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
 
               {/* Bottom Card Footer Actions */}
               <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <div className="text-[11px] font-mono text-slate-400">
+                <div className="text-xs font-mono font-semibold text-emerald-400">
                   £{item.replacementCost.toLocaleString()}
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setImageModalItem(item)}
+                    className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-white hover:border-slate-600 transition cursor-pointer"
+                    title="Change Photo / Search Online"
+                  >
+                    <Globe className="h-3 w-3 text-sky-400" />
+                    <span className="hidden sm:inline">Image</span>
+                  </button>
+
                   {canCheckout && item.status === 'available' && (
                     <button
                       onClick={() => setCheckOutItemTarget(item)}
@@ -395,6 +494,7 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
           <table className="w-full text-left text-xs">
             <thead className="border-b border-slate-800 bg-slate-850/80 text-[11px] font-semibold uppercase text-slate-400">
               <tr>
+                <th className="px-3 py-3 w-14 text-center">Photo</th>
                 <th className="px-4 py-3">Asset ID</th>
                 <th className="px-4 py-3">Equipment Name</th>
                 <th className="px-4 py-3">Category</th>
@@ -407,6 +507,20 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
             <tbody className="divide-y divide-slate-800/80 text-slate-300">
               {filteredEquipment.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-800/50 transition">
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setImageModalItem(item)}
+                      className="inline-flex relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-slate-700 bg-slate-800 items-center justify-center cursor-pointer hover:border-sky-400 transition group/thumb shadow-xs"
+                      title="Click to view / search image"
+                    >
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <Camera className="h-4 w-4 text-slate-500 group-hover/thumb:text-sky-400 transition" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-4 py-3 font-mono font-bold text-sky-400 whitespace-nowrap">
                     {item.id}
                   </td>
@@ -525,6 +639,24 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
 
       {isPrintModalOpen && (
         <PrintLabelsModal onClose={() => setIsPrintModalOpen(false)} />
+      )}
+
+      {imageModalItem && (
+        <ItemImageSearchModal
+          isOpen={Boolean(imageModalItem)}
+          onClose={() => setImageModalItem(null)}
+          onSelectImage={async (newUrl) => {
+            await updateEquipmentImage(imageModalItem.id, newUrl);
+            if (detailItem && detailItem.id === imageModalItem.id) {
+              setDetailItem({ ...detailItem, imageUrl: newUrl });
+            }
+            setImageModalItem(null);
+          }}
+          initialQuery={[imageModalItem.brand, imageModalItem.model].filter(Boolean).join(' ') || imageModalItem.name}
+          category={imageModalItem.category}
+          currentImage={imageModalItem.imageUrl}
+          itemName={imageModalItem.name}
+        />
       )}
     </div>
   );

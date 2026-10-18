@@ -17,7 +17,8 @@ async function startServer() {
 
   const app = express();
   const httpServer = http.createServer(app);
-  const PORT = Number(process.env.PORT) || 3000;
+  // Port 3000 required by AI Studio dev environment & container reverse proxy
+  const PORT = 3000;
 
   // JSON middleware
   app.use(express.json());

@@ -15,10 +15,15 @@ import {
   Share2,
   Tag,
   ArrowRight,
+  Camera,
+  Globe,
+  Maximize2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { EquipmentItem, EquipmentCondition } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { generateAssetQRCode, generateBarcodeSVG } from '../../utils/qrCodeGenerator';
+import { ItemImageSearchModal } from './ItemImageSearchModal';
 
 interface EquipmentDetailModalProps {
   item: EquipmentItem | null;
@@ -35,17 +40,21 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
   onOpenCheckIn,
   onFlagMaintenance,
 }) => {
-  const { auditLogs, currentUser, hasPermission } = useApp();
+  const { auditLogs, currentUser, hasPermission, updateEquipmentImage } = useApp();
+  const [activeItem, setActiveItem] = useState<EquipmentItem | null>(item);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
+    setActiveItem(item);
     if (item) {
       generateAssetQRCode(item.id).then((url) => setQrDataUrl(url));
     }
   }, [item]);
 
-  if (!item) return null;
+  if (!item || !activeItem) return null;
 
   const canCheckout = hasPermission('can_checkout_checkin');
   const canMaint = hasPermission('can_manage_maintenance');
@@ -163,7 +172,74 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-5 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+          {/* Equipment Photo Showcase */}
+          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner group">
+            {activeItem.imageUrl ? (
+              <div className="relative h-56 sm:h-64 w-full bg-slate-950 flex items-center justify-center overflow-hidden">
+                <img
+                  src={activeItem.imageUrl}
+                  alt={activeItem.name}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-black/25 pointer-events-none" />
+
+                {/* Top overlay badges */}
+                <div className="absolute top-3 left-3 flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-sky-300 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-sky-500/30 shadow-md">
+                    {activeItem.id}
+                  </span>
+                  <span className="text-xs text-slate-200 bg-slate-950/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/60 shadow-md">
+                    {activeItem.brand} {activeItem.model}
+                  </span>
+                </div>
+
+                {/* Floating Action Buttons */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsLightboxOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-950/85 hover:bg-slate-900 text-slate-200 hover:text-white px-2.5 py-1.5 text-xs font-medium backdrop-blur-md border border-slate-700 shadow-lg transition cursor-pointer"
+                    title="View Full Resolution"
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span>Expand</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsImageSearchOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-sky-600/90 hover:bg-sky-500 text-white px-3 py-1.5 text-xs font-semibold backdrop-blur-md border border-sky-400/40 shadow-lg transition cursor-pointer"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>Change Image / Search Online</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-850">
+                <div className="flex items-center gap-4 text-center sm:text-left">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-inner">
+                    <ImageIcon className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">No Item Image Assigned</h3>
+                    <p className="text-xs text-slate-400 mt-0.5 max-w-sm">
+                      Enhance inventory identification by adding a real photo or searching Wikipedia & Wikimedia public archives.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsImageSearchOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-500 transition shadow-md shrink-0 cursor-pointer"
+                >
+                  <Globe className="h-4 w-4" />
+                  <span>Search Online / Upload Photo</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Quick Actions Row */}
           <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl bg-slate-850 border border-slate-800">
             {canCheckout && item.status === 'available' && (
@@ -364,7 +440,15 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end border-t border-slate-800 bg-slate-900/90 p-4">
+        <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/90 p-4">
+          <button
+            type="button"
+            onClick={() => setIsImageSearchOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 font-medium cursor-pointer"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            <span>{activeItem.imageUrl ? 'Change Photo' : 'Add Photo'}</span>
+          </button>
           <button
             onClick={onClose}
             className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition"
@@ -373,6 +457,48 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Online Search / Upload Modal */}
+      <ItemImageSearchModal
+        isOpen={isImageSearchOpen}
+        onClose={() => setIsImageSearchOpen(false)}
+        onSelectImage={async (newUrl) => {
+          if (!activeItem) return;
+          await updateEquipmentImage(activeItem.id, newUrl);
+          setActiveItem({ ...activeItem, imageUrl: newUrl });
+          setIsImageSearchOpen(false);
+        }}
+        initialQuery={[activeItem.brand, activeItem.model].filter(Boolean).join(' ') || activeItem.name}
+        category={activeItem.category}
+        currentImage={activeItem.imageUrl}
+        itemName={activeItem.name}
+      />
+
+      {/* Full Resolution Lightbox */}
+      {isLightboxOpen && activeItem.imageUrl && (
+        <div
+          onClick={() => setIsLightboxOpen(false)}
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md animate-in fade-in cursor-zoom-out"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute top-4 right-4 z-10 rounded-full bg-black/70 p-2 text-white hover:bg-black transition cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <img
+              src={activeItem.imageUrl}
+              alt={activeItem.name}
+              className="max-h-[85vh] w-auto object-contain rounded-2xl"
+            />
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-center">
+              <p className="text-sm font-bold text-white">{activeItem.name}</p>
+              <p className="text-xs text-slate-400 font-mono mt-0.5">{activeItem.id} | {activeItem.brand} {activeItem.model}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
