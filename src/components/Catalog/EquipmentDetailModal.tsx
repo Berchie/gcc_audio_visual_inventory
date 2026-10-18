@@ -19,11 +19,15 @@ import {
   Globe,
   Maximize2,
   Image as ImageIcon,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { EquipmentItem, EquipmentCondition } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { generateAssetQRCode, generateBarcodeSVG } from '../../utils/qrCodeGenerator';
 import { ItemImageSearchModal } from './ItemImageSearchModal';
+import { AddEditEquipmentModal } from './AddEditEquipmentModal';
+import { DeleteEquipmentModal } from './DeleteEquipmentModal';
 
 interface EquipmentDetailModalProps {
   item: EquipmentItem | null;
@@ -31,6 +35,8 @@ interface EquipmentDetailModalProps {
   onOpenCheckOut: (item: EquipmentItem) => void;
   onOpenCheckIn: (item: EquipmentItem) => void;
   onFlagMaintenance: (item: EquipmentItem) => void;
+  onOpenEdit?: (item: EquipmentItem) => void;
+  onDeleteItem?: (item: EquipmentItem) => void;
 }
 
 export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
@@ -39,6 +45,8 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
   onOpenCheckOut,
   onOpenCheckIn,
   onFlagMaintenance,
+  onOpenEdit,
+  onDeleteItem,
 }) => {
   const { auditLogs, currentUser, hasPermission, updateEquipmentImage } = useApp();
   const [activeItem, setActiveItem] = useState<EquipmentItem | null>(item);
@@ -46,6 +54,8 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     setActiveItem(item);
@@ -59,6 +69,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
   const canCheckout = hasPermission('can_checkout_checkin');
   const canMaint = hasPermission('can_manage_maintenance');
   const canPrint = hasPermission('can_manage_equipment') || hasPermission('can_manage_master_data');
+  const canManageGear = hasPermission('can_manage_equipment');
 
   const itemAuditLogs = auditLogs.filter(
     (l) => l.assetId.toLowerCase().includes(item.id.toLowerCase())
@@ -145,30 +156,70 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-sm font-bold text-sky-400">
-                  {item.id}
+                  {activeItem.id}
                 </span>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${getStatusBadge(
-                    item.status
+                    activeItem.status
                   )}`}
                 >
-                  {item.status.replace('_', ' ')}
+                  {activeItem.status.replace('_', ' ')}
                 </span>
                 <span className="text-xs text-slate-400">|</span>
-                <span className="text-xs text-slate-300">{item.category}</span>
+                <span className="text-xs text-slate-300">{activeItem.category}</span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                {item.name}
+                {activeItem.name}
               </h2>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {canManageGear && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenEdit) {
+                    onClose();
+                    onOpenEdit(activeItem);
+                  } else {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-indigo-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+                title="Edit equipment specifications"
+              >
+                <Pencil className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="hidden sm:inline">Edit</span>
+              </button>
+            )}
+
+            {canManageGear && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeleteItem) {
+                    onClose();
+                    onDeleteItem(activeItem);
+                  } else {
+                    setIsDeleteModalOpen(true);
+                  }
+                }}
+                className="flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-950/20 px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-900/40 hover:text-rose-200 transition cursor-pointer"
+                title="Delete asset"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <span className="hidden sm:inline">Delete</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -242,11 +293,11 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
 
           {/* Quick Actions Row */}
           <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl bg-slate-850 border border-slate-800">
-            {canCheckout && item.status === 'available' && (
+            {canCheckout && activeItem.status === 'available' && (
               <button
                 onClick={() => {
                   onClose();
-                  onOpenCheckOut(item);
+                  onOpenCheckOut(activeItem);
                 }}
                 className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-500 transition shadow-sm cursor-pointer"
               >
@@ -255,11 +306,11 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
               </button>
             )}
 
-            {canCheckout && item.status === 'checked_out' && (
+            {canCheckout && activeItem.status === 'checked_out' && (
               <button
                 onClick={() => {
                   onClose();
-                  onOpenCheckIn(item);
+                  onOpenCheckIn(activeItem);
                 }}
                 className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition shadow-sm cursor-pointer"
               >
@@ -272,12 +323,48 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
               <button
                 onClick={() => {
                   onClose();
-                  onFlagMaintenance(item);
+                  onFlagMaintenance(activeItem);
                 }}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 transition cursor-pointer"
               >
                 <Wrench className="h-3.5 w-3.5 text-amber-400" />
                 <span>Flag Maintenance</span>
+              </button>
+            )}
+
+            {canManageGear && (
+              <button
+                onClick={() => {
+                  if (onOpenEdit) {
+                    onClose();
+                    onOpenEdit(activeItem);
+                  } else {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-950/40 px-3.5 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-900/50 hover:text-white transition shadow-sm cursor-pointer"
+                title="Edit equipment specifications, location, or details"
+              >
+                <Pencil className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Edit Equipment</span>
+              </button>
+            )}
+
+            {canManageGear && (
+              <button
+                onClick={() => {
+                  if (onDeleteItem) {
+                    onClose();
+                    onDeleteItem(activeItem);
+                  } else {
+                    setIsDeleteModalOpen(true);
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-950/40 px-3.5 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/50 hover:text-white transition shadow-sm cursor-pointer"
+                title="Permanently remove asset from inventory"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <span>Delete Asset</span>
               </button>
             )}
 
@@ -440,18 +527,60 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/90 p-4">
-          <button
-            type="button"
-            onClick={() => setIsImageSearchOpen(true)}
-            className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 font-medium cursor-pointer"
-          >
-            <Camera className="h-3.5 w-3.5" />
-            <span>{activeItem.imageUrl ? 'Change Photo' : 'Add Photo'}</span>
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 bg-slate-900/90 p-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsImageSearchOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 font-medium cursor-pointer"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              <span>{activeItem.imageUrl ? 'Change Photo' : 'Add Photo'}</span>
+            </button>
+
+            {canManageGear && (
+              <>
+                <span className="text-slate-600">|</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenEdit) {
+                      onClose();
+                      onOpenEdit(activeItem);
+                    } else {
+                      setIsEditModalOpen(true);
+                    }
+                  }}
+                  className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer"
+                  title="Edit asset specifications"
+                >
+                  <Pencil className="h-3 w-3" />
+                  <span>Edit Details</span>
+                </button>
+                <span className="text-slate-600">|</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onDeleteItem) {
+                      onClose();
+                      onDeleteItem(activeItem);
+                    } else {
+                      setIsDeleteModalOpen(true);
+                    }
+                  }}
+                  className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 font-medium cursor-pointer"
+                  title="Delete asset from inventory"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span>Delete Asset</span>
+                </button>
+              </>
+            )}
+          </div>
+
           <button
             onClick={onClose}
-            className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition"
+            className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition cursor-pointer"
           >
             Close
           </button>
@@ -473,6 +602,29 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         currentImage={activeItem.imageUrl}
         itemName={activeItem.name}
       />
+
+      {/* Internal Edit Modal Fallback */}
+      {isEditModalOpen && (
+        <AddEditEquipmentModal
+          itemToEdit={activeItem}
+          onClose={() => {
+            setIsEditModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Internal Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <DeleteEquipmentModal
+          item={activeItem}
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onDeleted={() => {
+            setIsDeleteModalOpen(false);
+            onClose();
+          }}
+        />
+      )}
 
       {/* Full Resolution Lightbox */}
       {isLightboxOpen && activeItem.imageUrl && (

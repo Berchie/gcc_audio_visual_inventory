@@ -25,6 +25,8 @@ import {
   Layers,
   Box,
   Image as ImageIcon,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { EquipmentItem, EquipmentCategory, EquipmentStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
@@ -32,6 +34,7 @@ import { EquipmentDetailModal } from './EquipmentDetailModal';
 import { CheckOutModal } from './CheckOutModal';
 import { CheckInModal } from './CheckInModal';
 import { AddEditEquipmentModal } from './AddEditEquipmentModal';
+import { DeleteEquipmentModal } from './DeleteEquipmentModal';
 import { PrintLabelsModal } from './PrintLabelsModal';
 import { ItemImageSearchModal } from './ItemImageSearchModal';
 
@@ -54,6 +57,7 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
   const [checkInItemTarget, setCheckInItemTarget] = useState<EquipmentItem | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<EquipmentItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<EquipmentItem | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [imageModalItem, setImageModalItem] = useState<EquipmentItem | null>(null);
 
@@ -454,6 +458,31 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
                     <span className="hidden sm:inline">Image</span>
                   </button>
 
+                  {canManageGear && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemToEdit(item);
+                        setIsAddModalOpen(true);
+                      }}
+                      className="rounded-lg border border-slate-700 bg-slate-800 p-1 text-indigo-400 hover:text-indigo-300 hover:border-indigo-500/50 hover:bg-slate-750 transition cursor-pointer"
+                      title="Edit equipment specifications"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  {canManageGear && (
+                    <button
+                      type="button"
+                      onClick={() => setItemToDelete(item)}
+                      className="rounded-lg border border-slate-700 bg-slate-800 p-1 text-rose-400 hover:text-rose-300 hover:border-rose-500/50 hover:bg-slate-750 transition cursor-pointer"
+                      title="Delete equipment asset"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
                   {canCheckout && item.status === 'available' && (
                     <button
                       onClick={() => setCheckOutItemTarget(item)}
@@ -557,6 +586,31 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
+                      {canManageGear && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setItemToEdit(item);
+                            setIsAddModalOpen(true);
+                          }}
+                          className="rounded-lg border border-slate-700 bg-slate-800 p-1 text-indigo-400 hover:text-indigo-300 hover:border-indigo-500/50 hover:bg-slate-750 transition cursor-pointer"
+                          title="Edit equipment specifications"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+
+                      {canManageGear && (
+                        <button
+                          type="button"
+                          onClick={() => setItemToDelete(item)}
+                          className="rounded-lg border border-slate-700 bg-slate-800 p-1 text-rose-400 hover:text-rose-300 hover:border-rose-500/50 hover:bg-slate-750 transition cursor-pointer"
+                          title="Delete equipment asset"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+
                       {canCheckout && item.status === 'available' && (
                         <button
                           onClick={() => setCheckOutItemTarget(item)}
@@ -610,6 +664,15 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
             // Flag maintenance
             setDetailItem(null);
           }}
+          onOpenEdit={(item) => {
+            setItemToEdit(item);
+            setIsAddModalOpen(true);
+            setDetailItem(null);
+          }}
+          onDeleteItem={(item) => {
+            setItemToDelete(item);
+            setDetailItem(null);
+          }}
         />
       )}
 
@@ -656,6 +719,20 @@ export const EquipmentCatalog: React.FC<EquipmentCatalogProps> = ({ onOpenScanne
           category={imageModalItem.category}
           currentImage={imageModalItem.imageUrl}
           itemName={imageModalItem.name}
+        />
+      )}
+
+      {itemToDelete && (
+        <DeleteEquipmentModal
+          item={itemToDelete}
+          isOpen={Boolean(itemToDelete)}
+          onClose={() => setItemToDelete(null)}
+          onDeleted={() => {
+            if (detailItem && detailItem.id === itemToDelete.id) {
+              setDetailItem(null);
+            }
+            setItemToDelete(null);
+          }}
         />
       )}
     </div>
